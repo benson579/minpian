@@ -36,10 +36,10 @@
         <div id="statusUI">
             <div class="w-12 h-12 border-4 border-[#C0A062] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
             <h1 class="text-xl font-bold mb-2 tracking-wide">系統啟動中</h1>
-            <p id="statusDesc" class="text-gray-400 text-sm">正在建立安全連線...</p>
+            <p id="statusDesc" class="text-gray-400 text-sm">正在喚醒數位名片...</p>
         </div>
 
-        <!-- 手動發送按鈕 -->
+        <!-- 手動發送按鈕 (當自動發送被取消或失敗時顯示) -->
         <div id="manualUI" class="hidden">
             <div class="w-16 h-16 gold-bg rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-2xl">
                 <i class="fas fa-paper-plane text-white text-2xl"></i>
@@ -67,18 +67,16 @@
     <script>
         const MY_LIFF_ID = "2008738532-iGK7DgOR"; 
 
-        // 圖片連結 (已修正：將中文網址進行編碼，防止 LINE 解析失敗)
-        // 原: .../VIP_財務策劃書_16比9.png -> 編碼後
+        // 圖片資源
         const IMG_SERVICE = "https://i.postimg.cc/PJJfxyfP/VIP_%E8%B2%A1%E5%8B%99%E7%AD%96%E5%8A%83%E6%9B%B8_16%E6%AF%949.png";
-        // 原: .../圖片1.jpg -> 編碼後
         const IMG_COMPANY = "https://i.postimg.cc/3NNrR1rY/%E5%9C%96%E7%89%871.jpg";
-        
         const IMG_PROFILE = "https://i.postimg.cc/mZJRPh35/8E00EF55-E081-43BC-82C2-B50578FA27B6.jpg";
 
         const bensonJson = {
           "type": "carousel",
           "contents": [
-            // === 第一張卡片 ===
+            // === 第一張卡片 (人物照) ===
+            // 設定：正方形 (1:1) + 填滿 (cover)
             {
               "type": "bubble",
               "size": "mega",
@@ -118,7 +116,8 @@
                 ]
               }
             },
-            // === 第二張卡片 ===
+            // === 第二張卡片 (財務書) ===
+            // 設定：正方形 (1:1) + 縮放 (fit) + 深色背景
             {
               "type": "bubble",
               "size": "mega",
@@ -132,7 +131,10 @@
               "hero": {
                 "type": "image",
                 "url": IMG_SERVICE,
-                "size": "full", "aspectRatio": "1:1", "aspectMode": "cover"
+                "size": "full", 
+                "aspectRatio": "1:1", 
+                "aspectMode": "fit", // 完整顯示不裁切
+                "backgroundColor": "#1a1a1a" // 深色背景填補留白
               },
               "body": {
                 "type": "box", "layout": "vertical", "paddingAll": "20px",
@@ -156,11 +158,12 @@
                 "contents": [
                   { "type": "button", "style": "primary", "height": "sm", "color": "#C0A062", "action": { "type": "uri", "label": "📜 什麼是 RFP?", "uri": "https://www.rfpi.com.tw/portal_a1.php?owner_num=a1_205771&button_num=a1" } },
                   { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📷 INSTAGRAM", "uri": "https://www.instagram.com/benson__special/" } },
-                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📘 FACEBOOK", "uri": "https://www.facebook.com/share/16v1wrqK9c/" } }
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📘 FACEBOOK", "uri": "https://www.facebook.com/share/1CsML2XrDx/" } }
                 ]
               }
             },
-            // === 第三張卡片 ===
+            // === 第三張卡片 (公司照) ===
+            // 設定：正方形 (1:1) + 縮放 (fit) + 深色背景
             {
               "type": "bubble",
               "size": "mega",
@@ -174,7 +177,10 @@
               "hero": {
                 "type": "image",
                 "url": IMG_COMPANY,
-                "size": "full", "aspectRatio": "1:1", "aspectMode": "cover"
+                "size": "full", 
+                "aspectRatio": "1:1", 
+                "aspectMode": "fit", // 完整顯示不裁切
+                "backgroundColor": "#1a1a1a" // 深色背景填補留白
               },
               "body": {
                 "type": "box", "layout": "vertical", "paddingAll": "20px",
