@@ -11,7 +11,7 @@
         body { font-family: 'Noto Sans TC', sans-serif; background-color: #0F172A; }
         .gold-bg { background: linear-gradient(135deg, #C0A062 0%, #a68a52 100%); }
     </style>
-    <!-- 全域錯誤攔截器：確保語法錯誤也能被看見 -->
+    <!-- 全域錯誤攔截器 -->
     <script>
         window.onerror = function(message, source, lineno, colno, error) {
             const errorDiv = document.getElementById('debugInfo');
@@ -19,7 +19,6 @@
                 errorDiv.style.display = 'block';
                 errorDiv.innerText = "系統錯誤: " + message + "\n行數: " + lineno;
             }
-            // 嘗試顯示在主要錯誤 UI
             const ui = document.getElementById('errorUI');
             const det = document.getElementById('errorDetail');
             if(ui && det) {
@@ -45,7 +44,7 @@
             <div class="w-16 h-16 gold-bg rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-2xl">
                 <i class="fas fa-paper-plane text-white text-2xl"></i>
             </div>
-            <h1 class="text-xl font-bold mb-2">準備完成</h1>
+            <h1 class="text-xl font-bold mb-2">名片已就緒</h1>
             <p class="text-gray-400 text-xs mb-8">點擊下方按鈕開始分享</p>
             <button onclick="sendBensonCard()" class="w-full py-4 gold-bg text-white rounded-2xl font-black text-lg active:scale-95 transition-all shadow-lg hover:shadow-yellow-600/20">
                 發送名片
@@ -62,14 +61,20 @@
             </div>
         </div>
         
-        <!-- 極端除錯訊息 (預設隱藏) -->
         <div id="debugInfo" style="display:none; position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.9); color:red; font-size:10px; padding:10px; text-align:left; z-index:9999;"></div>
     </div>
 
     <script>
         const MY_LIFF_ID = "2008738532-iGK7DgOR"; 
 
-        // 為了確保萬無一失，將所有內容展開為靜態 JSON
+        // 圖片連結 (已修正：將中文網址進行編碼，防止 LINE 解析失敗)
+        // 原: .../VIP_財務策劃書_16比9.png -> 編碼後
+        const IMG_SERVICE = "https://i.postimg.cc/PJJfxyfP/VIP_%E8%B2%A1%E5%8B%99%E7%AD%96%E5%8A%83%E6%9B%B8_16%E6%AF%949.png";
+        // 原: .../圖片1.jpg -> 編碼後
+        const IMG_COMPANY = "https://i.postimg.cc/3NNrR1rY/%E5%9C%96%E7%89%871.jpg";
+        
+        const IMG_PROFILE = "https://i.postimg.cc/mZJRPh35/8E00EF55-E081-43BC-82C2-B50578FA27B6.jpg";
+
         const bensonJson = {
           "type": "carousel",
           "contents": [
@@ -80,13 +85,13 @@
               "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#111111", "paddingAll": "16px",
                 "contents": [
-                  { "type": "text", "text": "PROFESSIONAL PROFILE", "color": "#C0A062", "size": "xxs", "weight": "bold", "letterSpacing": "0.15em" },
+                  { "type": "text", "text": "PROFESSIONAL PROFILE", "color": "#C0A062", "size": "xxs", "weight": "bold" },
                   { "type": "text", "text": "01", "color": "#222222", "align": "end", "size": "3xl", "weight": "bold", "position": "absolute", "offsetTop": "5px", "offsetEnd": "15px" }
                 ]
               },
               "hero": {
                 "type": "image",
-                "url": "https://i.postimg.cc/mZJRPh35/8E00EF55-E081-43BC-82C2-B50578FA27B6.jpg",
+                "url": IMG_PROFILE,
                 "size": "full", "aspectRatio": "1:1", "aspectMode": "cover", "backgroundColor": "#F3F4F6"
               },
               "body": {
@@ -120,13 +125,13 @@
               "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#111111", "paddingAll": "16px",
                 "contents": [
-                  { "type": "text", "text": "SERVICES & SOLUTIONS", "color": "#C0A062", "size": "xxs", "weight": "bold", "letterSpacing": "0.15em" },
+                  { "type": "text", "text": "SERVICES & SOLUTIONS", "color": "#C0A062", "size": "xxs", "weight": "bold" },
                   { "type": "text", "text": "02", "color": "#222222", "align": "end", "size": "3xl", "weight": "bold", "position": "absolute", "offsetTop": "5px", "offsetEnd": "15px" }
                 ]
               },
               "hero": {
                 "type": "image",
-                "url": "https://i.postimg.cc/PJJfxyfP/VIP_財務策劃書_16比9.png",
+                "url": IMG_SERVICE,
                 "size": "full", "aspectRatio": "1:1", "aspectMode": "cover"
               },
               "body": {
@@ -162,13 +167,13 @@
               "header": {
                 "type": "box", "layout": "vertical", "backgroundColor": "#111111", "paddingAll": "16px",
                 "contents": [
-                  { "type": "text", "text": "COMPANY OVERVIEW", "color": "#C0A062", "size": "xxs", "weight": "bold", "letterSpacing": "0.15em" },
+                  { "type": "text", "text": "COMPANY OVERVIEW", "color": "#C0A062", "size": "xxs", "weight": "bold" },
                   { "type": "text", "text": "03", "color": "#222222", "align": "end", "size": "3xl", "weight": "bold", "position": "absolute", "offsetTop": "5px", "offsetEnd": "15px" }
                 ]
               },
               "hero": {
                 "type": "image",
-                "url": "https://i.postimg.cc/3NNrR1rY/圖片1.jpg",
+                "url": IMG_COMPANY,
                 "size": "full", "aspectRatio": "1:1", "aspectMode": "cover"
               },
               "body": {
@@ -206,7 +211,6 @@
             document.getElementById('errorUI').classList.add('hidden');
             if(id === 'errorUI') {
                 document.getElementById('errorDetail').innerText = msg;
-                // 顯示環境資訊以便診斷
                 let env = "Env: ";
                 try { env += liff.getOS() + " / " + liff.getLanguage() + " / " + liff.getVersion(); } catch(e){}
                 document.getElementById('envInfo').innerText = env;
@@ -216,8 +220,6 @@
 
         async function sendBensonCard() {
             try {
-                // 1. 檢查是否在 LINE 環境中
-                // 2. 嘗試發送
                 const res = await liff.shareTargetPicker([
                     {
                         "type": "flex",
@@ -229,13 +231,10 @@
                 if (res) { 
                     liff.closeWindow(); 
                 } else { 
-                    // 使用者取消發送，回到手動畫面
                     showUI('manualUI'); 
                 }
             } catch (err) {
                 console.error(err);
-                // 這是關鍵：顯示完整的錯誤代碼，讓我們知道是哪裡錯了
-                // 常見錯誤：403 (權限不足), 400 (JSON 格式錯)
                 const code = err.code || "Unknown";
                 const message = err.message || JSON.stringify(err);
                 showUI('errorUI', `[${code}] ${message}`);
