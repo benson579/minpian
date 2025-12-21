@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benson 數位名片助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; background-color: #0F172A; }
+        .gold-bg { background: linear-gradient(135deg, #C0A062 0%, #a68a52 100%); }
+    </style>
+    <!-- 全域錯誤攔截器：確保語法錯誤也能被看見 -->
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorDiv = document.getElementById('debugInfo');
+            if (errorDiv) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerText = "系統錯誤: " + message + "\n行數: " + lineno;
+            }
+            // 嘗試顯示在主要錯誤 UI
+            const ui = document.getElementById('errorUI');
+            const det = document.getElementById('errorDetail');
+            if(ui && det) {
+                ui.classList.remove('hidden');
+                document.getElementById('statusUI').classList.add('hidden');
+                det.innerText = "程式執行錯誤: " + message;
+            }
+        };
+    </script>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 text-center text-white">
+
+    <div class="max-w-xs w-full">
+        <!-- 狀態顯示 -->
+        <div id="statusUI">
+            <div class="w-12 h-12 border-4 border-[#C0A062] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <h1 class="text-xl font-bold mb-2 tracking-wide">系統啟動中</h1>
+            <p id="statusDesc" class="text-gray-400 text-sm">正在建立安全連線...</p>
+        </div>
+
+        <!-- 手動發送按鈕 -->
+        <div id="manualUI" class="hidden">
+            <div class="w-16 h-16 gold-bg rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-2xl">
+                <i class="fas fa-paper-plane text-white text-2xl"></i>
+            </div>
+            <h1 class="text-xl font-bold mb-2">準備完成</h1>
+            <p class="text-gray-400 text-xs mb-8">點擊下方按鈕開始分享</p>
+            <button onclick="sendBensonCard()" class="w-full py-4 gold-bg text-white rounded-2xl font-black text-lg active:scale-95 transition-all shadow-lg hover:shadow-yellow-600/20">
+                發送名片
+            </button>
+        </div>
+
+        <!-- 錯誤 UI -->
+        <div id="errorUI" class="hidden">
+            <div class="bg-red-500/10 border border-red-500/50 p-6 rounded-3xl text-left">
+                <h1 class="text-red-400 font-bold mb-2 text-center">發生錯誤</h1>
+                <p id="errorDetail" class="text-gray-300 text-xs break-all font-mono mb-4"></p>
+                <div id="envInfo" class="text-[10px] text-gray-500 border-t border-gray-700 pt-2 font-mono"></div>
+                <button onclick="window.location.reload()" class="w-full mt-4 py-2 bg-white/10 rounded text-xs uppercase hover:bg-white/20">重新載入</button>
+            </div>
+        </div>
+        
+        <!-- 極端除錯訊息 (預設隱藏) -->
+        <div id="debugInfo" style="display:none; position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.9); color:red; font-size:10px; padding:10px; text-align:left; z-index:9999;"></div>
+    </div>
+
+    <script>
+        const MY_LIFF_ID = "2008738532-iGK7DgOR"; 
+
+        // 為了確保萬無一失，將所有內容展開為靜態 JSON
+        const bensonJson = {
+          "type": "carousel",
+          "contents": [
+            // === 第一張卡片 ===
+            {
+              "type": "bubble",
+              "size": "mega",
+              "header": {
+                "type": "box", "layout": "vertical", "backgroundColor": "#111111", "paddingAll": "16px",
+                "contents": [
+                  { "type": "text", "text": "PROFESSIONAL PROFILE", "color": "#C0A062", "size": "xxs", "weight": "bold", "letterSpacing": "0.15em" },
+                  { "type": "text", "text": "01", "color": "#222222", "align": "end", "size": "3xl", "weight": "bold", "position": "absolute", "offsetTop": "5px", "offsetEnd": "15px" }
+                ]
+              },
+              "hero": {
+                "type": "image",
+                "url": "https://i.postimg.cc/mZJRPh35/8E00EF55-E081-43BC-82C2-B50578FA27B6.jpg",
+                "size": "full", "aspectRatio": "1:1", "aspectMode": "cover", "backgroundColor": "#F3F4F6"
+              },
+              "body": {
+                "type": "box", "layout": "vertical", "paddingAll": "20px",
+                "contents": [
+                  { "type": "text", "text": "謝兆鎔 Benson", "weight": "bold", "size": "xl", "color": "#111827" },
+                  { "type": "text", "text": "御謙VIP菁英會 業務經理", "size": "xs", "color": "#C0A062", "margin": "xs", "weight": "bold" },
+                  { "type": "separator", "margin": "md", "color": "#EEEEEE" },
+                  { "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
+                    "contents": [
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "CIA500 強團隊核心成員", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "團隊累積管理客戶資金高達 20 億", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "全台 RFP 財務策劃師最高濃度團隊", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] }
+                    ]
+                  }
+                ]
+              },
+              "footer": {
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "16px",
+                "contents": [
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#C0A062", "action": { "type": "uri", "label": "✨ 加 LINE 好友", "uri": "https://line.me/ti/p/EnUj8ZaFce" } },
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📝 諮詢表單連結", "uri": "https://financesheet-1.vercel.app/" } },
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "➤ 分享給好友", "uri": "https://liff.line.me/" + MY_LIFF_ID } }
+                ]
+              }
+            },
+            // === 第二張卡片 ===
+            {
+              "type": "bubble",
+              "size": "mega",
+              "header": {
+                "type": "box", "layout": "vertical", "backgroundColor": "#111111", "paddingAll": "16px",
+                "contents": [
+                  { "type": "text", "text": "SERVICES & SOLUTIONS", "color": "#C0A062", "size": "xxs", "weight": "bold", "letterSpacing": "0.15em" },
+                  { "type": "text", "text": "02", "color": "#222222", "align": "end", "size": "3xl", "weight": "bold", "position": "absolute", "offsetTop": "5px", "offsetEnd": "15px" }
+                ]
+              },
+              "hero": {
+                "type": "image",
+                "url": "https://i.postimg.cc/PJJfxyfP/VIP_財務策劃書_16比9.png",
+                "size": "full", "aspectRatio": "1:1", "aspectMode": "cover"
+              },
+              "body": {
+                "type": "box", "layout": "vertical", "paddingAll": "20px",
+                "contents": [
+                  { "type": "text", "text": "客製化財務策劃書", "weight": "bold", "size": "xl", "color": "#111827" },
+                  { "type": "text", "text": "WEALTH MANAGEMENT", "size": "xs", "color": "#9ca3af", "margin": "xs" },
+                  { "type": "separator", "margin": "md", "color": "#EEEEEE" },
+                  { "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
+                    "contents": [
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "金流規劃 - 房貸減免 | 退休規劃", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "風險規劃 - 減少保費 | 提高保障", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "財務規劃 - 資產配置 | 信貸整合", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "教育旅遊 - 子女教育 | 免費出國", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "家族傳承 - 信託 | 傳承 | 尊嚴", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] }
+                    ]
+                  }
+                ]
+              },
+              "footer": {
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "16px",
+                "contents": [
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#C0A062", "action": { "type": "uri", "label": "📜 什麼是 RFP?", "uri": "https://www.rfpi.com.tw/portal_a1.php?owner_num=a1_205771&button_num=a1" } },
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📷 INSTAGRAM", "uri": "https://www.instagram.com/benson__special/" } },
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📘 FACEBOOK", "uri": "https://www.facebook.com/share/16v1wrqK9c/" } }
+                ]
+              }
+            },
+            // === 第三張卡片 ===
+            {
+              "type": "bubble",
+              "size": "mega",
+              "header": {
+                "type": "box", "layout": "vertical", "backgroundColor": "#111111", "paddingAll": "16px",
+                "contents": [
+                  { "type": "text", "text": "COMPANY OVERVIEW", "color": "#C0A062", "size": "xxs", "weight": "bold", "letterSpacing": "0.15em" },
+                  { "type": "text", "text": "03", "color": "#222222", "align": "end", "size": "3xl", "weight": "bold", "position": "absolute", "offsetTop": "5px", "offsetEnd": "15px" }
+                ]
+              },
+              "hero": {
+                "type": "image",
+                "url": "https://i.postimg.cc/3NNrR1rY/圖片1.jpg",
+                "size": "full", "aspectRatio": "1:1", "aspectMode": "cover"
+              },
+              "body": {
+                "type": "box", "layout": "vertical", "paddingAll": "20px",
+                "contents": [
+                  { "type": "text", "text": "御謙VIP菁英會", "weight": "bold", "size": "xl", "color": "#111827" },
+                  { "type": "text", "text": "GROUP PROFILE", "size": "xs", "color": "#9ca3af", "margin": "xs" },
+                  { "type": "separator", "margin": "md", "color": "#EEEEEE" },
+                  { "type": "box", "layout": "vertical", "margin": "md", "spacing": "sm",
+                    "contents": [
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "世界 CIA500 強團隊", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "[專屬財務規劃] 客製化方案", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "[人才培訓規劃] 百萬年薪培訓", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "[資源整合服務] 專業會計師合作", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] },
+                      { "type": "box", "layout": "baseline", "spacing": "sm", "contents": [ { "type": "text", "text": "★", "color": "#C0A062", "size": "sm", "flex": 0 }, { "type": "text", "text": "[財經教育講座] 稅務投資講座", "color": "#666666", "size": "sm", "flex": 1, "wrap": true } ] }
+                    ]
+                  }
+                ]
+              },
+              "footer": {
+                "type": "box", "layout": "vertical", "spacing": "sm", "paddingAll": "16px",
+                "contents": [
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📷 官方 Instagram", "uri": "https://www.instagram.com/youtrend_vip" } },
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📘 官方 Facebook", "uri": "https://www.facebook.com/share/1CsML2XrDx/" } },
+                  { "type": "button", "style": "primary", "height": "sm", "color": "#404040", "action": { "type": "uri", "label": "📍 公司地址", "uri": "https://maps.app.goo.gl/81JB2KBH2fMA87Dz7" } }
+                ]
+              }
+            }
+          ]
+        };
+
+        function showUI(id, msg = "") {
+            document.getElementById('statusUI').classList.add('hidden');
+            document.getElementById('manualUI').classList.add('hidden');
+            document.getElementById('errorUI').classList.add('hidden');
+            if(id === 'errorUI') {
+                document.getElementById('errorDetail').innerText = msg;
+                // 顯示環境資訊以便診斷
+                let env = "Env: ";
+                try { env += liff.getOS() + " / " + liff.getLanguage() + " / " + liff.getVersion(); } catch(e){}
+                document.getElementById('envInfo').innerText = env;
+            }
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        async function sendBensonCard() {
+            try {
+                // 1. 檢查是否在 LINE 環境中
+                // 2. 嘗試發送
+                const res = await liff.shareTargetPicker([
+                    {
+                        "type": "flex",
+                        "altText": "Benson 謝兆鎔與您分享數位名片",
+                        "contents": bensonJson
+                    }
+                ]);
+                
+                if (res) { 
+                    liff.closeWindow(); 
+                } else { 
+                    // 使用者取消發送，回到手動畫面
+                    showUI('manualUI'); 
+                }
+            } catch (err) {
+                console.error(err);
+                // 這是關鍵：顯示完整的錯誤代碼，讓我們知道是哪裡錯了
+                // 常見錯誤：403 (權限不足), 400 (JSON 格式錯)
+                const code = err.code || "Unknown";
+                const message = err.message || JSON.stringify(err);
+                showUI('errorUI', `[${code}] ${message}`);
+            }
+        }
+
+        async function main() {
+            try {
+                await liff.init({ liffId: MY_LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    sendBensonCard();
+                }
+            } catch (err) {
+                showUI('errorUI', "LIFF Init Error: " + err.message);
+            }
+        }
+        window.onload = main;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+</body>
+</html>
