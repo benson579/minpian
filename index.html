@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benson 數位名片傳送助手</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px; text-align: center; color: #fff;
+            background: #111827;
+            font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+        }
+        .wrap { width: 100%; max-width: 320px; }
+        .hidden { display: none !important; }
+        h1 { font-size: 18px; margin: 0; }
+        .desc { color: #9ca3af; font-size: 12px; margin-top: 8px; line-height: 1.6; }
+        .spinner {
+            width: 48px; height: 48px; margin: 0 auto 16px;
+            border: 4px solid #C0A062; border-top-color: transparent; border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .icon {
+            width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #C0A062 0%, #a68a52 100%);
+        }
+        .btn {
+            width: 100%; margin-top: 28px; padding: 16px; border: 0; border-radius: 16px;
+            font-size: 17px; font-weight: 900; color: #fff; cursor: pointer;
+            background: linear-gradient(135deg, #C0A062 0%, #a68a52 100%);
+        }
+        .btn:active { transform: scale(0.97); }
+        .error { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.5); padding: 24px; border-radius: 24px; }
+        .error h1 { color: #f87171; }
+        .link-btn { margin-top: 16px; background: none; border: 0; color: rgba(255,255,255,.6); text-decoration: underline; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <!-- 連線中 -->
+        <div id="loadingUI">
+            <div class="spinner"></div>
+            <h1>正在開啟 LINE 分享</h1>
+            <p class="desc">請稍候…</p>
+        </div>
+
+        <!-- 手動分享（取消分享、或自動開啟失敗時顯示） -->
+        <div id="manualUI" class="hidden">
+            <div class="icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>
+            </div>
+            <h1>分享名片給好友</h1>
+            <p class="desc" id="manualHint">點下方按鈕，選擇要傳送的好友或群組</p>
+            <button class="btn" onclick="sendBensonCard()">選取好友並發送</button>
+        </div>
+
+        <!-- 錯誤 -->
+        <div id="errorUI" class="hidden error">
+            <h1>無法開啟分享</h1>
+            <p id="errorDetail" class="desc"></p>
+            <button class="link-btn" onclick="location.reload()">重新整理</button>
+        </div>
+    </div>
+
+    <script>
+        // ===== 設定區：之後要換圖片或連結，只改這裡 =====
+        const MY_LIFF_ID = "2008738532-iGK7DgOR";
+
+        const IMAGES = {
+            // 照片跟網頁放在一起部署（images/card01.jpg），網址自動帶入，不需要另外上傳
+            card1: new URL("images/card01.jpg", location.href).href,
+            // 中文檔名已改用 encodeURI 處理，建議重新上傳時直接改成英文檔名
+            card2: encodeURI("https://i.postimg.cc/PJJfxyfP/VIP_財務策劃書_16比9.png"),
+            card3: encodeURI("https://i.postimg.cc/3NNrR1rY/圖片1.jpg")
+        };
+
+        const LINKS = {
+            addFriend: "https://line.me/ti/p/UYh9gcYETH",
+            form: "https://financesheet-1.vercel.app/",
+            share: "https://liff.line.me/" + MY_LIFF_ID,
+            rfp: "https://www.rfpi.com.tw/portal_a1.php?owner_num=a1_205771&button_num=a1",
+            myIG: "https://www.instagram.com/benson__special",
+            myFB: "https://www.facebook.com/share/16v1wrqK9c/",
+            companyIG: "https://www.instagram.com/youtrend_vip",
+            companyFB: "https://www.facebook.com/share/1CsML2XrDx/",
+            address: "https://maps.app.goo.gl/81JB2KBH2fMA87Dz7"
+        };
+
+        // ===== 共用元件 =====
+        const GOLD = "#C0A062";
+        const DARK_BTN = "#404040";
+
+        // 金色星星的內容行
+        const starLine = (text) => ({
+            type: "text",
+            contents: [
+                { type: "span", text: "★ ", color: GOLD },
+                { type: "span", text: text }
+            ],
+            size: "sm", color: "#6b7280", wrap: true
+        });
+
+        // 黑色標頭（英文標籤 + 大頁碼）
+        const header = (label, no) => ({
+            type: "box", layout: "vertical", backgroundColor: "#111111", paddingAll: "16px",
+            contents: [
+                { type: "text", text: label, color: GOLD, size: "xxs", weight: "bold" },
+                { type: "text", text: no, color: "#2a2a2a", align: "end", size: "3xl", weight: "bold",
+                  position: "absolute", offsetTop: "5px", offsetEnd: "15px" }
+            ]
+        });
+
+        // 主圖：三張統一 3:2，並設定相同底色
+        const hero = (url, action) => ({
+            type: "image", url: url,
+            size: "full", aspectRatio: "3:2", aspectMode: "cover",
+            backgroundColor: "#E5E7EB",
+            ...(action ? { action: action } : {})
+        });
+
+        const button = (label, uri, color) => ({
+            type: "button", style: "primary", height: "sm", color: color,
+            action: { type: "uri", label: label, uri: uri }
+        });
+
+        const body = (title, subtitle, subtitleColor, lines) => ({
+            type: "box", layout: "vertical",
+            contents: [
+                { type: "text", text: title, weight: "bold", size: "xl", color: "#111827" },
+                { type: "text", text: subtitle, size: "xs", color: subtitleColor, margin: "xs", weight: "bold" },
+                { type: "separator", margin: "md", color: "#f3f4f6" },
+                { type: "box", layout: "vertical", margin: "md", spacing: "sm", contents: lines.map(starLine) },
+                { type: "filler" } // 把按鈕推到底部，三張卡片按鈕對齊
+            ]
+        });
+
+        const footer = (buttons) => ({ type: "box", layout: "vertical", spacing: "sm", contents: buttons });
+
+        // ===== 名片內容 =====
+        const bensonJson = {
+            type: "carousel",
+            contents: [
+                {
+                    type: "bubble", size: "mega",
+                    header: header("PROFESSIONAL PROFILE", "01"),
+                    hero: hero(IMAGES.card1, { type: "uri", uri: LINKS.addFriend }),
+                    body: body("謝兆鎔 Benson", "御謙VIP菁英會 業務經理", GOLD, [
+                        "CIA500 強團隊核心成員",
+                        "團隊累積管理客戶資金高達 20 億",
+                        "全台 RFP 財務策劃師最高濃度團隊"
+                    ]),
+                    footer: footer([
+                        button("✨ 加 LINE 好友", LINKS.addFriend, GOLD),
+                        button("📝 諮詢表單連結", LINKS.form, DARK_BTN),
+                        button("➤ 分享給好友", LINKS.share, DARK_BTN)
+                    ])
+                },
+                {
+                    type: "bubble", size: "mega",
+                    header: header("SERVICES & SOLUTIONS", "02"),
+                    hero: hero(IMAGES.card2),
+                    body: body("客製化財務策劃書", "WEALTH MANAGEMENT", "#9ca3af", [
+                        "金流規劃 - 房貸減免 | 退休規劃",
+                        "風險規劃 - 減少保費 | 提高保障",
+                        "財務規劃 - 資產配置 | 信貸整合",
+                        "教育旅遊 - 子女教育 | 免費出國",
+                        "家族傳承 - 信託 | 傳承 | 尊嚴"
+                    ]),
+                    footer: footer([
+                        button("📜 什麼是 RFP？", LINKS.rfp, GOLD),
+                        button("📷 INSTAGRAM", LINKS.myIG, DARK_BTN),
+                        button("📘 FACEBOOK", LINKS.myFB, DARK_BTN)
+                    ])
+                },
+                {
+                    type: "bubble", size: "mega",
+                    header: header("COMPANY OVERVIEW", "03"),
+                    hero: hero(IMAGES.card3),
+                    body: body("御謙VIP菁英會", "GROUP PROFILE", "#9ca3af", [
+                        "世界 CIA500 強團隊",
+                        "[專屬財務規劃] 客製化財務方案",
+                        "[人才培訓規劃] 百萬年薪規劃師",
+                        "[資源整合服務] 專業會計師/貸款合作",
+                        "[財經教育講座] 稅務、投資、理財講座"
+                    ]),
+                    footer: footer([
+                        button("📷 官方 Instagram", LINKS.companyIG, DARK_BTN),
+                        button("📘 官方 Facebook", LINKS.companyFB, DARK_BTN),
+                        button("📍 公司地址", LINKS.address, DARK_BTN)
+                    ])
+                }
+            ]
+        };
+
+        // ===== 畫面切換 =====
+        function show(id) {
+            ["loadingUI", "manualUI", "errorUI"].forEach(x =>
+                document.getElementById(x).classList.toggle("hidden", x !== id));
+        }
+
+        function showError(msg) {
+            document.getElementById("errorDetail").innerText = msg;
+            show("errorUI");
+        }
+
+        // ===== 分享 =====
+        async function sendBensonCard() {
+            if (!liff.isApiAvailable("shareTargetPicker")) {
+                showError("此環境不支援分享功能。請用手機 LINE 開啟此連結，並確認 LINE 已更新到最新版。");
+                return;
+            }
+            try {
+                const res = await liff.shareTargetPicker([{
+                    type: "flex",
+                    altText: "【謝兆鎔 Benson】財務規劃數位名片，點開看看 👉",
+                    contents: bensonJson
+                }]);
+                if (res) {
+                    // 傳送成功
+                    if (liff.isInClient()) { liff.closeWindow(); }
+                    else {
+                        document.getElementById("manualHint").innerText = "已傳送成功！還想分享給其他人嗎？";
+                        show("manualUI");
+                    }
+                } else {
+                    // 使用者關閉了好友選單（沒有傳送）
+                    document.getElementById("manualHint").innerText = "尚未傳送，可以再選一次好友";
+                    show("manualUI");
+                }
+            } catch (err) {
+                // 例如：瀏覽器擋掉自動開啟，需要使用者手動點按鈕
+                show("manualUI");
+                console.error(err);
+            }
+        }
+
+        async function main() {
+            try {
+                await liff.init({ liffId: MY_LIFF_ID, withLoginOnExternalBrowser: true });
+                if (!liff.isLoggedIn()) { liff.login(); return; }
+                sendBensonCard();
+            } catch (err) {
+                showError("初始化失敗：" + (err.message || err));
+            }
+        }
+
+        window.addEventListener("load", main);
+    </script>
+</body>
+</html>
